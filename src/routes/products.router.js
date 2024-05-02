@@ -1,102 +1,75 @@
-const express = require("express");
-const router = express.Router();
+import { Router } from "express";  
+import productManager from "../managers/productManager.js";
+const router = Router();
 
-const ProductManager = require("../controllers/product-manager.js");
-const productManager = new ProductManager("./src/models/productos.json");
+router.get("/", async (req, res) =>{
+    try {
+        
+        const { limit } = req.query;
+        const product = await productManager.getProduct(limit);
+        
+        res.status(200).json(products);
 
-//1) Listar todos los productos. 
+    } catch (error) {
+        console.log(error);
+    }
+});
+ 
 router.get("/", async (req, res) => {
     try {
-        const limit = req.query.limit;
-        const productos = await productManager.getProducts();
-        if (limit) {
-            res.json(productos.slice(0, limit));
-        } else {
-            res.json(productos);
-        }
+        
+        const { pid } = req.params;
+
+        const product = await productManager.getProductById(parseInt(pid));
+
+        res.status(200).json(product);
+
     } catch (error) {
-        console.error("Error al obtener productos", error);
-        res.status(500).json({
-            error: "Error interno del servidor"
-        });
+        console.log(error);
     }
 });
 
-//2) Traer solo un producto por id: 
 
-router.get("/:pid", async (req, res) => {
-    const id = req.params.pid;
-
+router.post("/", async  (req, res) => {
     try {
-        const producto = await productManager.getProductById(parseInt(id));
-        if (!producto) {
-            return res.json({
-                error: "Producto no encontrado"
-            });
-        }
+        const product = req.body;
 
-        res.json(producto);
+        const newProduct = await productManager.addProduct(product);
+
+        res.status(201).json(newProduct);
+
     } catch (error) {
-        console.error("Error al obtener producto", error);
-        res.status(500).json({
-            error: "Error interno del servidor"
-        });
+        console.log(error);
     }
 });
 
 
-//3) Agregar nuevo producto: 
-
-router.post("/", async (req, res) => {
-    const nuevoProducto = req.body;
-
+router.put("/:pid", async  (req, res) => {
     try {
-        await productManager.addProduct(nuevoProducto);
-        res.status(201).json({
-            message: "Producto agregado exitosamente"
-        });
+        const {pid} = req.params;
+        const product = req.body;
+
+        const updateProduct = await productManager.updateProduct(pid, product);
+
+        res.status(201).json(updateProduct);
+
     } catch (error) {
-        console.error("Error al agregar producto", error);
-        res.status(500).json({
-            error: "Error interno del servidor"
-        });
+        console.log(error);
     }
 });
 
-//4) Actualizar por ID
-router.put("/:pid", async (req, res) => {
-    const id = req.params.pid;
-    const productoActualizado = req.body;
 
+router.delete("/:pid", async  (req, res) => {
     try {
-        await productManager.updateProduct(parseInt(id), productoActualizado);
-        res.json({
-            message: "Producto actualizado exitosamente"
-        });
+        const {pid} = req.params;
+        
+        await productManager.deleteProduct(pid);
+
+        res.status(201).json({message: "producto eliminado"});
+
     } catch (error) {
-        console.error("Error al actualizar producto", error);
-        res.status(500).json({
-            error: "Error interno del servidor"
-        });
+        console.log(error);
     }
 });
 
-//5) Eliminar producto: 
-
-router.delete("/:pid", async (req, res) => {
-    const id = req.params.pid;
-
-    try {
-        await productManager.deleteProduct(parseInt(id));
-        res.json({
-            message: "Producto eliminado exitosamente"
-        });
-    } catch (error) {
-        console.error("Error al eliminar producto", error);
-        res.status(500).json({
-            error: "Error interno del servidor"
-        });
-    }
-});
-
-module.exports = router;
+export default router;
